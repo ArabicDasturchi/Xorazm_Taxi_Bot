@@ -10,10 +10,19 @@ def driver_main_menu(bot_enabled: bool = False):
     keyboard = [
         [KeyboardButton(text="🚖 Yo'nalishni O'zgartirish"), KeyboardButton(text=status_text)],
         [KeyboardButton(text="💺 Bo'sh Joylar Soni"), KeyboardButton(text="📊 Mening Statistikam")],
-        [KeyboardButton(text="⚙️ Mening Ma'lumotlarim"), KeyboardButton(text="💳 To'lov va Ta'riflar")],
-        [KeyboardButton(text="👨‍💻 Adminga Murojaat")]
+        [KeyboardButton(text="📝 Xabar Yozish"), KeyboardButton(text="💳 To'lov va Ta'riflar")],
+        [KeyboardButton(text="⚙️ Mening Ma'lumotlarim"), KeyboardButton(text="👨‍💻 Adminga Murojaat")]
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+def ad_message_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="4 ta bo'sh joy", callback_data="ad_template_4")],
+        [InlineKeyboardButton(text="3 ta bo'sh joy", callback_data="ad_template_3")],
+        [InlineKeyboardButton(text="2 ta bo'sh joy", callback_data="ad_template_2")],
+        [InlineKeyboardButton(text="1 ta bo'sh joy", callback_data="ad_template_1")],
+        [InlineKeyboardButton(text="✏️ O'z xabarimni yozish", callback_data="ad_custom")]
+    ])
 
 def select_direction_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[

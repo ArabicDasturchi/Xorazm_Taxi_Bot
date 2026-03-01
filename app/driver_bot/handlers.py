@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.core.config import ADMIN_TELEGRAM_ID, SUBSCRIPTION_PRICE, MY_CARD, MY_CARD_EXPIRY, ADMIN_USERNAME
 from app.driver_bot.states import DriverRegistration, PyrogramAuth, SettingUpdate
-from app.driver_bot.keyboards import phone_request_keyboard, driver_main_menu, select_direction_keyboard, regions_keyboard
+from app.driver_bot.keyboards import phone_request_keyboard, driver_main_menu, select_direction_keyboard, regions_keyboard, ad_message_keyboard
 from app.database.db import AsyncSessionLocal
 from app.database.crud import CRUD
 from app.admin_bot.keyboards import user_approve_keyboard
@@ -204,7 +204,7 @@ async def route_selected(callback: CallbackQuery):
         user = await CRUD.get_user(session, callback.from_user.id)
         if not user or user.status != "active": return
             
-        # Example data: route_to_tashkent_Urganch or route_from_tashkent_Xiva
+        # Example data: route_to_tashkent_Farg'ona or route_from_tashkent_Qo'qon
         data = callback.data.split("_")
         direction = data[1] + "_" + data[2] # to_tashkent
         region = data[3]
@@ -355,6 +355,63 @@ async def update_seats(message: Message, state: FSMContext):
         await CRUD.update_available_seats(session, user.id, seats)
     
     await message.answer(f"✅ Bo'sh joylar soni: <b>{seats} ta</b> deb belgilandi!\nEndi mijozlarga shunday yetkaziladi.", reply_markup=driver_main_menu(user.bot_enabled))
+    await state.clear()
+
+@driver_router.message(F.text == "📝 Xabar Yozish")
+async def write_ad_message(message: Message, state: FSMContext):
+    async with AsyncSessionLocal() as session:
+        user = await CRUD.get_user(session, message.from_user.id)
+        if not user or user.status != "active": return
+        
+    await message.answer(
+        "📝 <b>Guruhlarga yuboriladigan avtomatik reklama matnini tanlang:</b>\n\nTayyor shablonlardan birini tanlashingiz yoki o'zingiz matn yozishingiz mumkin:",
+        reply_markup=ad_message_keyboard()
+    )
+
+@driver_router.callback_query(F.data.startswith("ad_template_"))
+async def set_ad_template(callback: CallbackQuery):
+    seats = int(callback.data.replace("ad_template_", ""))
+    async with AsyncSessionLocal() as session:
+        user = await CRUD.get_user(session, callback.from_user.id)
+        if not user: return
+        
+        routes = await CRUD.get_routes_by_driver(session, user.id)
+        if not routes:
+            return await callback.answer("❌ Avval 'Yo'nalishni O'zgartirish' bo'limidan yo'nalish tanlang!", show_alert=True)
+            
+        route_str = f"{routes[-1].from_city} ⇄ {routes[-1].to_city}"
+        
+        ad_text = (
+            f"🚕 <b>{route_str.upper()}</b> yo'nalishi bo'yicha taksi xizmati!\n\n"
+            f"🚗 Avtomobil: <b>{user.car_model or 'Komfort avto'}</b>\n"
+            f"💺 Hozirda <b>{seats} ta</b> bo'sh joy mavjud.\n"
+            f"📞 Bog'lanish uchun: <b>{user.contact_number}</b>\n\n"
+            f"✨ <i>Manzilga qulay, tez va xavfsiz holda eltib qo'yamiz. Yo'lga chiqishga tayyormiz!</i>"
+        )
+        await CRUD.update_custom_ad_message(session, user.id, ad_text)
+        await CRUD.update_available_seats(session, user.id, seats)
+        
+    await callback.message.edit_text(f"✅ <b>Xabar muvaffaqiyatli saqlandi!</b>\n\n<b>Matin:</b>\n{ad_text}")
+
+@driver_router.callback_query(F.data == "ad_custom")
+async def wait_for_custom_ad(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        "✏️ <b>O'zingiz xohlagan reklama matnini yozib yuboring:</b>\n\n"
+        "<i>Ushbu matn avto-qidiruv yoniq vaqtida har 5 daqiqada guruhlarga yuborib turiladi. Matnda o'z telefon raqamingiz va yo'nalishingizni yozishni unutmang!</i>"
+    )
+    await state.set_state(SettingUpdate.waiting_for_custom_ad)
+
+@driver_router.message(SettingUpdate.waiting_for_custom_ad)
+async def process_custom_ad(message: Message, state: FSMContext):
+    if not message.text:
+       return await message.answer("Iltimos faqat matnli xabar yuboring:")
+       
+    async with AsyncSessionLocal() as session:
+        user = await CRUD.get_user(session, message.from_user.id)
+        if not user: return
+        await CRUD.update_custom_ad_message(session, user.id, message.html_text)
+        
+    await message.answer(f"✅ <b>Sizning shaxsiy xabaringiz muvaffaqiyatli saqlandi!</b>\n\n<b>Matin:</b>\n{message.html_text}", reply_markup=driver_main_menu(user.bot_enabled))
     await state.clear()
 
 @driver_router.message(F.text == "📊 Mening Statistikam")

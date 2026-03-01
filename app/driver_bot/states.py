@@ -13,3 +13,4 @@ class PyrogramAuth(StatesGroup):
 
 class SettingUpdate(StatesGroup):
     waiting_for_seats = State()
+    waiting_for_custom_ad = State()

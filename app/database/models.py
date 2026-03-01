@@ -20,6 +20,7 @@ class User(Base):
     available_seats = Column(Integer, default=4) # Available seats
     ads_sent = Column(Integer, default=0) # Number of ads sent
     clients_found = Column(Integer, default=0) # Number of clients auto-replied
+    custom_ad_message = Column(String(2000), nullable=True) # Foydalanuvchi kiritgan maxsus xabar
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     routes = relationship("Route", back_populates="driver")

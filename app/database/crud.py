@@ -44,6 +44,11 @@ class CRUD:
         await session.commit()
 
     @staticmethod
+    async def update_custom_ad_message(session: AsyncSession, user_id: int, message: str):
+        await session.execute(update(User).where(User.id == user_id).values(custom_ad_message=message))
+        await session.commit()
+
+    @staticmethod
     async def update_session_string(session: AsyncSession, user_id: int, session_str: str):
         await session.execute(update(User).where(User.id == user_id).values(session_string=session_str))
         await session.commit()

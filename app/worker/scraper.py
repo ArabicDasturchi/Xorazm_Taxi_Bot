@@ -42,7 +42,7 @@ class UserbotManager:
         @client.on_message(filters.group & filters.text)
         async def parse_clients(c: Client, message: Message):
             text = message.text.lower()
-            if "taksi kerak" in text or "toshkentga" in text or "xorazmga" in text or "urganchga" in text or "xivaga" in text or "toshkent" in text:
+            if "taksi kerak" in text or "toshkentga" in text or "vodiyga" in text or "toshkent" in text or "farg'onaga" in text:
                 
                 async with AsyncSessionLocal() as session:
                     db_user = await CRUD.get_user_by_id(session, user_id)
@@ -108,13 +108,16 @@ class UserbotManager:
                     
                     route_str = f"{routes[-1].from_city} ⇄ {routes[-1].to_city}"
                         
-                    ad_text = (
-                        f"🚕 <b>{route_str.upper()}</b> yo'nalishi bo'yicha taksi xizmati!\n\n"
-                        f"🚗 Avtomobil: <b>{db_user.car_model or 'Komfort avto'}</b>\n"
-                        f"💺 Hozirda <b>{db_user.available_seats} ta</b> bo'sh joy mavjud.\n"
-                        f"📞 Bog'lanish uchun: <b>{db_user.contact_number}</b>\n\n"
-                        f"✨ <i>Manzilga qulay, tez va xavfsiz holda eltib qo'yamiz. Yo'lga chiqishga tayyormiz!</i>"
-                    )
+                    if db_user.custom_ad_message:
+                        ad_text = db_user.custom_ad_message
+                    else:
+                        ad_text = (
+                            f"🚕 <b>{route_str.upper()}</b> yo'nalishi bo'yicha taksi xizmati!\n\n"
+                            f"🚗 Avtomobil: <b>{db_user.car_model or 'Komfort avto'}</b>\n"
+                            f"💺 Hozirda <b>{db_user.available_seats} ta</b> bo'sh joy mavjud.\n"
+                            f"📞 Bog'lanish uchun: <b>{db_user.contact_number}</b>\n\n"
+                            f"✨ <i>Manzilga qulay, tez va xavfsiz holda eltib qo'yamiz. Yo'lga chiqishga tayyormiz!</i>"
+                        )
                     
                     # Interate through ALL groups the user is already a member of
                     from pyrogram.enums import ChatType
