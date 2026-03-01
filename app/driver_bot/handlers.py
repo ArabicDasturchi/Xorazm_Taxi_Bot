@@ -18,6 +18,7 @@ driver_router = Router()
 
 @driver_router.message(CommandStart())
 async def start_cmd(message: Message, state: FSMContext):
+    await state.clear()
     telegram_id = message.from_user.id
     async with AsyncSessionLocal() as session:
         user = await CRUD.get_user(session, telegram_id)
